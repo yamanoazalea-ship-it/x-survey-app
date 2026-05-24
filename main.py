@@ -31,8 +31,7 @@ def survey(req: SurveyRequest):
     prompt = build_prompt(req.mode, req.input)
 
     model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        tools="google_search_retrieval",
+        model_name="gemini-3.1-flash-lite-preview",
     )
     response = model.generate_content(prompt)
 
