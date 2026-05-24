@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 import os
 
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class SurveyRequest(BaseModel):
     mode: str  # "trend", "account", "keyword", "idea"
@@ -30,10 +30,10 @@ def root():
 def survey(req: SurveyRequest):
     prompt = build_prompt(req.mode, req.input)
 
-    model = genai.GenerativeModel(
-        model_name="gemini-3.1-flash-lite-preview",
+    response = client.models.generate_content(
+        model="gemini-3.1-flash-lite-preview",
+        contents=prompt,
     )
-    response = model.generate_content(prompt)
 
     return {"result": response.text}
 
