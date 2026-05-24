@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from anthropic import Anthropic
+import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 class SurveyRequest(BaseModel):
     mode: str  # "trend", "account", "keyword", "idea"
@@ -29,20 +29,14 @@ def root():
 @app.post("/survey")
 def survey(req: SurveyRequest):
     prompt = build_prompt(req.mode, req.input)
-    
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=2000,
-        tools=[{"type": "web_search_20250305", "name": "web_search"}],
-        messages=[{"role": "user", "content": prompt}]
+
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    response = model.generate_content(
+        prompt,
+        tools=[{"google_search": {}}],
     )
-    
-    result = ""
-    for block in response.content:
-        if hasattr(block, "text"):
-            result += block.text
-    
-    return {"result": result}
+
+    return {"result": response.text}
 
 def build_prompt(mode: str, input: str) -> str:
     prompts = {
